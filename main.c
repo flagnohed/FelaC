@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <ctype.h>
 #include <string.h>
+#include <assert.h>
+
 
 typedef enum {
 	RETURN,
@@ -55,6 +57,21 @@ void print_tokens () {
 void print_token (size_t i) {
 }
 
+/* Reverses to the correct order. When inserting, the first token added
+ * is located at the tail (stack) */
+void reverse (token **head) {
+	token *prev = NULL;
+	token *cur = *head;
+	token *next = NULL;
+
+	while (cur != NULL) {
+		next = cur->next;
+		cur->next = prev;
+		prev = cur;
+		cur = next;
+	}
+	*head = prev;
+}
 
 
 #define RET_STR "return"
@@ -145,6 +162,63 @@ void tokenize (char contents[])
 			// printf("Unrecognized char: %c. Continuing... \n", contents[i]);		
 	}
 }
+/* ASS is funnier than ASM but mean the same thing. */
+#define MAX_ASS_SIZE 64000
+#define TMP_ASS_NAME "tmp.asm"
+/* Creates an assembly file (and returns a pointer to its FILE object)
+ * corresponding to the current tokens in tokenhead. Essentially, 
+ * this is the parser. kinda. */ 
+void tokens2asm () {
+	/* T is our current token. Reverse to make parsing easier.  */
+	reverse (&tokenhead);
+	token *t = tokenhead, *next = NULL, *next2 = NULL;
+	size_t i;
+	char asscode[MAX_ASS_SIZE] = "";
+	
+	/* This is the main loop for tyring to figure out how to write 
+	the FelaC code in assembly. After exiting the loop, asscode buffer
+	contains the assembly code. */
+	while (t != NULL) {
+		
+		if (t->type == RETURN) {
+			next = t->next;
+			if (next->type == INT_LITERAL) {
+				next2 = next->next;
+				if (next2->type == SEMICOLON) {
+					/* We want to return next->value, and 
+						since next2->type is a semicolon, we know that
+						the line is done, so we can create the assembly code
+						for it, which is placed in the asscode buffer. */
+					sprintf (asscode, 
+							"global _start\n_start:\n\tmov rax, 60\n\tmov rdi, %s\n\tsyscall\n",
+							next->value);
+					// free (t);
+					// free (next);
+					// free (next2);
+					break;
+				}
+			}
+		}
+	}
+	FILE *assfile;
+	int r, c;
+	/* Open or create tmp.asm. W means write over any existing text, 
+		W+ means append to existing text (if any). */
+	assfile = fopen ("tmp.asm", "w+");
+	if (assfile == NULL) 
+		printf ("Failed to create 'tmp.asm'. \n");
+	
+	/* Write asscode to assfile. */
+	if ((r = fputs (asscode, assfile)) == EOF) {
+		printf ("Failed to write to file. \n");
+		exit (EXIT_FAILURE);
+	}
+
+	c = fclose (assfile);
+	assert (c == 0);
+	
+}
+
 
 
 
@@ -202,12 +276,19 @@ int main (int argc, char **argv)
 	}
 	contents[sz] = '\0';
 	
-	printf ("%s \n", contents);				
-	
 	tokenize (contents);	
-	print_tokens ();		
-	// printf ("first token value: %s\n", tokenhead->value);
-	// printf ("second token value: %s\n", tokenhead->next->value);
+	tokens2asm ();		
+	
+	/* Call nasm and ld. */
+	char nasmbuf[256];
+	char ldbuf[256];
+
+	sprintf (nasmbuf, "nasm -felf64 %s", TMP_ASS_NAME);
+	system (nasmbuf);
+
+	sprintf (ldbuf, "ld -o out tmp.o");
+	system (ldbuf);
+
 
 	return EXIT_SUCCESS;
 }
