@@ -1,7 +1,0 @@
-To compile and run asm file:
-
-	nasm -felf64 test.asm && ld test.o -o test && ./test
-
-To see error_code of last command: 
-
-	echo $?
