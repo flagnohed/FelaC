@@ -25,12 +25,13 @@ token *tokenhead = NULL;
 token *add_token (token_t type, char *value) {
 
 	token *new = malloc (sizeof (token));
-		
+	char *valcpy = strdup (value);
+	printf ("valcpy: %s \n", valcpy);	
 	if (new == NULL) 
 		return NULL;
 
 	new->type = type;
-	new->value = value;
+	new->value = valcpy;
 	new->next = tokenhead;
 
 	tokenhead = new;
@@ -38,32 +39,48 @@ token *add_token (token_t type, char *value) {
 	return new;
 }	
 
+/* Print all tokens. */
+void print_tokens () {
+	token *cur = tokenhead;
+	while (cur->next != NULL) {
+		printf ("(%d, %s)<-", cur->type, cur->value);
+		cur = cur->next;
+	}
+	if (cur == NULL)
+		printf ("cur is null! \n");	
+	printf ("(%d, %s) \n", cur->type, cur->value);
+}
+
+/* Print token at index i in the list. */
+void print_token (size_t i) {
+}
+
+
+
 #define RET_STR "return"
 
 /* Tokenizes the .fc file and updates the token linked list (tokenhead). */
 void tokenize (char contents[])
 {	
-	
-	
-
 	/* Index relative to current token being parsed. */
 	size_t tmpi, i;
 	size_t contentsize = strlen (contents);
 	token_t tt;
 	token *t;
-
+	char valuebuf[contentsize];
 	/* Start the parsing loop. We wont go through the loop CONTENTSIZE times.
 		When we find some interesting character, we start the actual tokenizing. 
 		Then, we jump the size of token in terms of i. */
 	for (i = 0; i < contentsize; i++) {
 		/* A token cannot have a value larger than 
 			the entire contents array. */
-		char valuebuf[contentsize];
+		
+		 
 		/* If C is a letter, start reading into VALUEBUF */
 		if (isalpha (contents[i])) {
 			tmpi = 0;	
 			valuebuf[tmpi] = contents[i];
-			
+		
 			/* Keep looking for either letters or numbers. 
 				For example, variables can not start with a number 
 				but can contain it. */
@@ -71,8 +88,8 @@ void tokenize (char contents[])
 				valuebuf[++tmpi] = contents[i];
 			
 			valuebuf[tmpi + 1] = '\0';	
-			
-
+			printf ("valuebuf: %s \n", valuebuf);
+			i--;
 			/* Figure out what type this is. */
 			if (strcmp (RET_STR, valuebuf) == 0) {
 				/* This is a return keyword, so add the
@@ -84,6 +101,8 @@ void tokenize (char contents[])
 				}
 				/* We are done with this token, so jump to the beginning of
 					the for loop at the start of next token. */
+				
+			
 				continue;
 			} 
 
@@ -99,9 +118,9 @@ void tokenize (char contents[])
 			/* Keep reading digits. */
 			while (isdigit (contents[++i]))
 				valuebuf[++tmpi] = contents[i];
-			
+			i--;
 			valuebuf[tmpi + 1] = '\0';
-			
+			printf ("valuebuf: %s\n", valuebuf);			
 			tt = INT_LITERAL;
 			if ((t = add_token (tt, valuebuf)) == NULL) {
 				printf ("Could not add token %s. \n", valuebuf);
@@ -120,7 +139,10 @@ void tokenize (char contents[])
 		}
 		
 		else if (contents[i] == ' ') 
-			continue;		
+			continue;
+
+		// else
+			// printf("Unrecognized char: %c. Continuing... \n", contents[i]);		
 	}
 }
 
@@ -183,8 +205,8 @@ int main (int argc, char **argv)
 	printf ("%s \n", contents);				
 	
 	tokenize (contents);	
-			
-	printf ("first token value: %s\n", tokenhead->value);
+	print_tokens ();		
+	// printf ("first token value: %s\n", tokenhead->value);
 	// printf ("second token value: %s\n", tokenhead->next->value);
 
 	return EXIT_SUCCESS;
