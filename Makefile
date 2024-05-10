@@ -1,15 +1,16 @@
 
 CC = gcc
 CFLAGS = -g -Wall -O2
-
-fela: main.o
-	$(CC) -o fela main.o
+OBJS = build/main.o build/token.o
+fela: $(OBJS)
+	$(CC) -o fela $(OBJS)
 	
-%.o: %.c
+build/%.o: %.c
 	$(CC) -c -o $@ $^ $(CFLAGS)
 
+
 clean:
-	rm -f main.o main
+	rm -f build/*
 
 	  
 	
