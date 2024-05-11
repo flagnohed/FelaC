@@ -1,7 +1,7 @@
 #pragma once
 
 typedef enum {
-	RETURN,
+	EXIT,
 	INT_LITERAL,
 	SEMICOLON
 }	token_t;
@@ -14,8 +14,8 @@ typedef struct {
 
 /* ASS is funnier than ASM but mean the same thing. */
 #define MAX_ASS_SIZE 64000
-#define TMP_ASS_NAME "tmp.asm"
-#define TMP_OBJ_NAME "tmp.o"
+#define TMP_ASS_NAME "build/tmp.asm"
+#define TMP_OBJ_NAME "build/tmp.o"
 
 void tokens2asm (token **tokenhead);
 

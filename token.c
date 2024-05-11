@@ -6,64 +6,6 @@
 #include <ctype.h>
 
 
-/* Creates an assembly file (and returns a pointer to its FILE object)
- * corresponding to the current tokens in tokenhead. Essentially, 
- * this is the parser. kinda. */ 
-void tokens2asm (token **tokenhead) {
-	/* T is our current token. Reverse to make parsing easier.  */
-	reverse (tokenhead);
-	token *t = *tokenhead, *next = NULL, *next2 = NULL;
-	// size_t i;
-	char asscode[MAX_ASS_SIZE] = "";
-	
-	/* This is the main loop for tyring to figure out how to write 
-	the FelaC code in assembly. After exiting the loop, asscode buffer
-	contains the assembly code. */
-	while (t != NULL) {
-		
-		if (t->type == RETURN) {
-			next = t->next;
-			if (next->type == INT_LITERAL) {
-				next2 = next->next;
-				if (next2->type == SEMICOLON) {
-					/* We want to return next->value, and 
-						since next2->type is a semicolon, we know that
-						the line is done, so we can create the assembly code
-						for it, which is placed in the asscode buffer. */
-					sprintf (asscode, 
-							"global _start\n_start:\n\tmov rax, 60\n\tmov rdi, %s\n\tsyscall\n",
-							next->value);
-					// free (t);
-					// free (next);
-					// free (next2);
-					break;
-				}
-			}
-		}
-	}
-	FILE *assfile;
-	int r, c;
-	/* Open or create tmp.asm. W means write over any existing text, 
-		W+ means append to existing text (if any). */
-	assfile = fopen ("tmp.asm", "w+");
-	if (assfile == NULL) 
-		printf ("Failed to create 'tmp.asm'. \n");
-	
-	/* Write asscode to assfile. */
-	if ((r = fputs (asscode, assfile)) == EOF) {
-		printf ("Failed to write to file. \n");
-		exit (EXIT_FAILURE);
-	}
-
-	c = fclose (assfile);
-	assert (c == 0);
-	
-}
-
-
-
-
-
 /* Creates a token with attributes TYPE and VALUE and
  * adds it to the linked list of tokens. Returns a pointer
  * to the new token. */
@@ -115,7 +57,7 @@ void reverse (token **head) {
 }
 
 
-#define RET_STR "return"
+#define EXIT_STR "exit"
 
 /* Tokenizes the .fc file and fills the token list. */
 void tokenize (char contents[], token **tokenhead)
@@ -149,10 +91,10 @@ void tokenize (char contents[], token **tokenhead)
 			printf ("valuebuf: %s \n", valuebuf);
 			i--;
 			/* Figure out what type this is. */
-			if (strcmp (RET_STR, valuebuf) == 0) {
+			if (strcmp (EXIT_STR, valuebuf) == 0) {
 				/* This is a return keyword, so add the
 					token to the list. */
-				tt = RETURN;
+				tt = EXIT;
 				if ((t = add_token (tt, valuebuf, tokenhead)) == NULL) {
 					printf ("Could not add token %s. \n", valuebuf);
 					exit (EXIT_FAILURE);

@@ -1,0 +1,12 @@
+[exit] -> exit([expr]);
+[expr] -> INT_LITERAL
+
+
+
+struct expr {
+
+    token *lhs;
+    token *rhs;
+    token *
+
+};

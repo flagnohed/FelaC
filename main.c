@@ -17,7 +17,7 @@ void tokens2asm (token **tokenhead);
 
 void print_info_and_exit (int exit_code)
 {
-	printf ("Usage: felac <file.fc> \n");
+	printf ("Usage: make clean && make && ./felac <file.fc> && ./fcprogram\n");
 	exit (exit_code);
 }
 
@@ -70,8 +70,10 @@ int main (int argc, char **argv)
 	contents[sz] = '\0';
 	
 	tokenize (contents, &tokenhead);	
-	tokens2asm (&tokenhead);		
-	
+	parse (&tokenhead);		
+	// generate ()
+
+
 	/* Call nasm and ld. */
 	char nasmbuf[256];
 	char ldbuf[256];
