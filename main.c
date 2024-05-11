@@ -5,7 +5,8 @@
 #include <string.h>
 #include <assert.h>
 #include "token.h"
-
+#include "parse.h"
+#include "codegen.h"
 
 
 /* List of tokens */
@@ -29,9 +30,12 @@ int main (int argc, char **argv)
 		print_info_and_exit (EXIT_FAILURE);
 		
 	}
+	char *filename = argv[1];
+	/* Check for '-h' --> display usage. */
+	if (strcmp (filename, "-h") == 0)
+		print_info_and_exit (EXIT_SUCCESS);
 	
 	/* Complain if wrong extension. */
-	char *filename = argv[1];
 	size_t s = strlen (filename);
 	if (filename[s-3] != '.' || 
 		filename[s-2] != 'f' || 
@@ -70,8 +74,26 @@ int main (int argc, char **argv)
 	contents[sz] = '\0';
 	
 	tokenize (contents, &tokenhead);	
-	parse (&tokenhead);		
-	// generate ()
+	node_exit *nexit = parse (&tokenhead);		
+	char asscode[MAX_ASS_SIZE] = "";
+	generate_exit (nexit, asscode);
+	/* The assembly code is now in asscode. Put it in a file. */
+	FILE *assfile;
+	int r, c;
+	/* Open or create tmp.asm. W means write over any existing text, 
+		W+ means append to existing text (if any). */
+	assfile = fopen ("build/tmp.asm", "w+");
+	if (assfile == NULL) 
+		printf ("Failed to create 'build/tmp.asm'. \n");
+	
+	/* Write asscode to assfile. */
+	if ((r = fputs (asscode, assfile)) == EOF) {
+		printf ("Failed to write to file. \n");
+		exit (EXIT_FAILURE);
+	}
+
+	c = fclose (assfile);
+	assert (c == 0);
 
 
 	/* Call nasm and ld. */
