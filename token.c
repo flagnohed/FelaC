@@ -13,7 +13,6 @@ token *add_token (token_t type, char *value, token **tokenhead) {
 
 	token *new = malloc (sizeof (token));
 	char *valcpy = strdup (value);
-	printf ("valcpy: %s \n", valcpy);	
 	if (new == NULL) 
 		return NULL;
 
@@ -30,12 +29,10 @@ token *add_token (token_t type, char *value, token **tokenhead) {
 void print_tokens (token **tokenhead) {
 	token *cur = *tokenhead;
 	while (cur->next != NULL) {
-		printf ("(%d, %s)<-", cur->type, cur->value);
+		printf ("'%s' ", cur->value);
 		cur = cur->next;
 	}
-	if (cur == NULL)
-		printf ("cur is null! \n");	
-	printf ("(%d, %s) \n", cur->type, cur->value);
+	printf ("'%s' \n", cur->value);
 }
 
 
@@ -71,7 +68,7 @@ void tokenize (char contents[], token **tokenhead)
 	/* Start the parsing loop. We wont go through the loop CONTENTSIZE times.
 		When we find some interesting character, we start the actual tokenizing. 
 		Then, we jump the size of token in terms of i. */
-	for (i = 0; i < contentsize; i++) {
+	while (i < contentsize) {
 		/* A token cannot have a value larger than 
 			the entire contents array. */
 		
@@ -88,7 +85,6 @@ void tokenize (char contents[], token **tokenhead)
 				valuebuf[++tmpi] = contents[i];
 			
 			valuebuf[tmpi + 1] = '\0';	
-			printf ("valuebuf: %s \n", valuebuf);
 			i--;
 			/* Figure out what type this is. */
 			if (strcmp (EXIT_STR, valuebuf) == 0) {
@@ -117,7 +113,6 @@ void tokenize (char contents[], token **tokenhead)
 				valuebuf[++tmpi] = contents[i];
 			i--;
 			valuebuf[tmpi + 1] = '\0';
-			printf ("valuebuf: %s\n", valuebuf);			
 			tt = INT_LITERAL;
 			if ((t = add_token (tt, valuebuf, tokenhead)) == NULL) {
 				printf ("Could not add token '%s'. \n", valuebuf);

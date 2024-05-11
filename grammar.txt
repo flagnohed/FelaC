@@ -1,4 +1,5 @@
 [prog] -> [stmt]*                   // 0..n
 [expr] -> INT_LITERAL
+       -> ident
 [stmt] -> exit([expr]);
           let "ident" be [expr];     // ident is variable name

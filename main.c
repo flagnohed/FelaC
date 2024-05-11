@@ -22,6 +22,7 @@ void print_info_and_exit (int exit_code)
 	exit (exit_code);
 }
 
+#define EXEC_NAME "fcprogram"
 
 int main (int argc, char **argv) 
 {
@@ -102,14 +103,20 @@ int main (int argc, char **argv)
 	int code;
 
 	sprintf (nasmbuf, "nasm -felf64 %s", TMP_ASS_NAME);
-	if ((code = system (nasmbuf)))
-		printf ("system() returned %d. \n", code); 
+	if ((code = system (nasmbuf))) {
+		printf ("nasm error: system() returned %d. \n", code); 
+		exit (EXIT_FAILURE);
+	}
+		
 		
 
-	sprintf (ldbuf, "ld -o fcprogram %s", TMP_OBJ_NAME);
-	if ((code = system (ldbuf)))
-		printf ("system() returned %d. \n", code);
+	sprintf (ldbuf, "ld -o %s %s", EXEC_NAME, TMP_OBJ_NAME);
+	if ((code = system (ldbuf))) {
+		printf ("ld error: system() returned %d. \n", code);
+		exit (EXIT_FAILURE);
+	}
+		
 
-
+	printf ("Compilation done. Main executable: fcprogram. \n");
 	return EXIT_SUCCESS;
 }
