@@ -74,9 +74,9 @@ int main (int argc, char **argv)
 	contents[sz] = '\0';
 	
 	tokenize (contents, &tokenhead);	
-	node_exit *nexit = parse (&tokenhead);		
+	node_exit *nexit = parse_exit (&tokenhead);		
 	char asscode[MAX_ASS_SIZE] = "";
-	generate_exit (nexit, asscode);
+	generate_exit (nexit, asscode); 
 	/* The assembly code is now in asscode. Put it in a file. */
 	FILE *assfile;
 	int r, c;

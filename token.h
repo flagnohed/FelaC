@@ -3,7 +3,9 @@
 typedef enum {
 	EXIT,
 	INT_LITERAL,
-	SEMICOLON
+	SEMICOLON,
+	OPEN_PAREN,
+	CLOSE_PAREN
 }	token_t;
 	
 typedef struct {

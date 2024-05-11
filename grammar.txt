@@ -1,12 +1,4 @@
-[exit] -> exit([expr]);
+[prog] -> [stmt]*                   // 0..n
 [expr] -> INT_LITERAL
-
-
-
-struct expr {
-
-    token *lhs;
-    token *rhs;
-    token *
-
-};
+[stmt] -> exit([expr]);
+          let "ident" be [expr];     // ident is variable name

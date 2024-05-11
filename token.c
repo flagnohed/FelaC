@@ -101,9 +101,6 @@ void tokenize (char contents[], token **tokenhead)
 				}
 				/* We are done with this token, so jump to the beginning of
 					the for loop at the start of next token. */
-				
-			
-				continue;
 			} 
 
 			else {
@@ -123,23 +120,39 @@ void tokenize (char contents[], token **tokenhead)
 			printf ("valuebuf: %s\n", valuebuf);			
 			tt = INT_LITERAL;
 			if ((t = add_token (tt, valuebuf, tokenhead)) == NULL) {
-				printf ("Could not add token %s. \n", valuebuf);
+				printf ("Could not add token '%s'. \n", valuebuf);
 				exit (EXIT_FAILURE);
 			}
-			continue;
-			
+		}
+
+		else if (contents[i] == '(') {
+			tt = OPEN_PAREN;
+			if ((t = add_token (tt, "(", tokenhead)) == NULL) {
+				printf ("Could not add token '('. \n");
+				exit (EXIT_FAILURE);
+			}
+		}
+
+		else if (contents[i] == ')') {
+			tt = CLOSE_PAREN;
+			if ((t = add_token (tt, ")", tokenhead)) == NULL) {
+				printf ("Could not add token ')'. \n");
+				exit (EXIT_FAILURE);
+			}
 		}
 
 		else if (contents[i] == ';') {
 			tt = SEMICOLON;
 			if ((t = add_token (tt, ";", tokenhead)) == NULL) {
-				printf ("Could not add semicolon as token. \n");
+				printf ("Could not add token ';'. \n");
 				exit (EXIT_FAILURE);
 			}
 		}
 		
 		else if (contents[i] == ' ') 
 			continue;
+
+		
 
 		// else
 			// printf("Unrecognized char: %c. Continuing... \n", contents[i]);		

@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
+#include <string.h>
 
 /* Looks for an expression in the provided token list t. Returns 
 1 if expression found, 0 otherwise. Takes an empty node_expr as input and the 
@@ -25,7 +25,7 @@ node_expr *parse_expr (token *t) {
 /* Creates an assembly file (and returns a pointer to its FILE object)
  * corresponding to the current tokens in tokenhead. Essentially, 
  * this is the parser. kinda. */ 
-node_exit *parse (token **tokenhead) {
+node_exit *parse_exit (token **tokenhead) {
 	/* T is our current token. Reverse to make parsing easier.  */
 	reverse (tokenhead);
     print_tokens (tokenhead);
@@ -38,15 +38,29 @@ node_exit *parse (token **tokenhead) {
 	while (t != NULL) {
 		if (t->type == EXIT) {
             t = t->next;
-            if ((nexpr = parse_expr (t)) == NULL) {
-                printf ("Expected an expression after exit. \n");
+            if (strcmp (t->value, "(") != 0) {
+                printf ("Expected '('. \n");
                 exit (EXIT_FAILURE);
             }
+
+            t = t->next;
+            if ((nexpr = parse_expr (t)) == NULL) {
+                printf ("Expected an expression. \n");
+                exit (EXIT_FAILURE);
+            }
+
+            t = t->next;
+            if (strcmp (t->value, ")") != 0) {
+                printf ("Expected ')'. \n");
+                exit (EXIT_FAILURE);
+            }
+
             t = t->next;
             if (t->type != SEMICOLON) {
                 printf ("Expected semicolon. \n");
                 exit (EXIT_FAILURE);
             }
+
             nexit = malloc (sizeof (node_exit));
             nexit->ne = nexpr;
             break;
