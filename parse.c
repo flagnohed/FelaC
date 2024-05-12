@@ -9,64 +9,119 @@
 1 if expression found, 0 otherwise. Takes an empty node_expr as input and the 
 token chain with the token(s) to be evaluated as t. */
 node_expr *parse_expr (token *t) {
-    token *tp = t;
-    node_expr *ne = malloc (sizeof (node_expr));
-    if (tp->type == INT_LITERAL) {
-        ne->has_value = 1;
-        ne->int_literal = atoi (tp->value);  
-        return ne;  
-    }
-    
-    return NULL;
+    node_expr *expr = NULL;
+    /* Token IDENT and expr_t IDENT are not the same technically. */
+    if (t->type == INT_LITERAL)
+        expr = EXPR_NEW(INT_LITERAL, t);
+    else if (t->type == IDENT)
+        expr = EXPR_NEW(IDENT, t);
+
+    return expr;
 }
 
-/* sprintf (asscode, "global _start\n_start:\n\tmov rax, 60\n\tmov rdi, %s\n\tsyscall\n", next->value);*/
+/*
+should have parse_head, so we send in tokenhead, and then cut of 
+branches in the tree (like if the first token is exit, then
+the second one must be parenthesis, if the first is LET then
+the next one must be an identifier, and so on. have a switch stmt
+in parse_head over token_t type. )
 
-/* Creates an assembly file (and returns a pointer to its FILE object)
- * corresponding to the current tokens in tokenhead. Essentially, 
- * this is the parser. kinda. */ 
-node_exit *parse_exit (token **tokenhead) {
-	/* T is our current token. Reverse to make parsing easier.  */
-	reverse (tokenhead);
-    print_tokens (tokenhead);
-    token *t = *tokenhead;
+*/
+
+node_stmt *parse_stmt (token *t) {
+    node_stmt *stmt = NULL;
     node_expr *nexpr = NULL;
-    node_exit *nexit = NULL;
-	/* This is the main loop for trying to figure out how to write 
-	the FelaC code in assembly. After exiting the loop, asscode buffer
-	contains the assembly code. */
-	while (t != NULL) {
-		if (t->type == EXIT) {
-            t = t->next;
-            if (strcmp (t->value, "(") != 0) {
-                printf ("Expected '('. \n");
-                exit (EXIT_FAILURE);
-            }
+    char *ident_name = NULL;
 
-            t = t->next;
-            if ((nexpr = parse_expr (t)) == NULL) {
-                printf ("Expected an expression. \n");
-                exit (EXIT_FAILURE);
-            }
 
-            t = t->next;
-            if (strcmp (t->value, ")") != 0) {
-                printf ("Expected ')'. \n");
-                exit (EXIT_FAILURE);
-            }
+    if (t->type == EXIT) {
+        t = t->next;
+        if (strcmp (t->value, "(") != 0) {
+            printf ("Expected '('. \n");
+            exit (EXIT_FAILURE);
+        }
 
-            t = t->next;
-            if (t->type != SEMICOLON) {
-                printf ("Expected semicolon. \n");
-                exit (EXIT_FAILURE);
-            }
+        t = t->next;
+        if ((nexpr = parse_expr (t)) == NULL) {
+            printf ("Expected an expression. \n");
+            exit (EXIT_FAILURE);
+        }
 
-            nexit = malloc (sizeof (node_exit));
-            nexit->ne = nexpr;
-            break;
-		} 
-        else 
-            printf("something went wrong its all ur fault\n");
-	}
-    return nexit;
+        t = t->next;
+        if (strcmp (t->value, ")") != 0) {
+            printf ("Expected ')'. \n");
+            exit (EXIT_FAILURE);
+        }
+
+        t = t->next;
+        if (t->type != SEMICOLON) {
+            printf ("Expected semicolon. \n");
+            exit (EXIT_FAILURE);
+        }
+        t = t->next;
+        stmt = STMT_NEW(EXIT, nexpr, NULL);
+    }
+
+    else if (t->type == LET) {
+        t = t->next;
+
+        if (t->type != IDENT) {
+            printf("Expected an identifier. \n");
+            exit (EXIT_FAILURE);
+        }
+        /* Save the name of the identifier. */
+        
+        
+        t = t->next;
+        if (t->type != BE) {
+            printf("Expected the 'be' keyword after identifier. \n");
+            exit (EXIT_FAILURE);
+        }
+
+        t = t->next;
+        if ((nexpr = parse_expr (t)) == NULL) {
+            printf ("Expected an expression. \n");
+            exit (EXIT_FAILURE);
+        }
+        t = t->next;
+        if (t->type != SEMICOLON) {
+            printf ("Expected semicolon. \n");
+            exit (EXIT_FAILURE);
+        }
+        t = t->next;
+
+        stmt = STMT_NEW(LET, nexpr, NULL);
+    }
+
+    else {
+        printf ("Error parsing statement. \n");
+        exit (EXIT_FAILURE);
+    }
+
+    return stmt;
+}
+
+/* Adds node_stmt NEW to stmt list pointed to by HEAD. 
+When creating a statement with STMT_NEW, the next pointer is NULL.
+So we need to do it here to have the correct order in node_prog. */
+node_stmt *add_stmt (node_stmt **head, node_stmt *new) {
+    new->next = *head;
+    *head = new;
+    return new;
+}
+
+
+node_prog *parse_prog (token *t) {
+    node_prog *prog;
+    node_stmt *stmt = NULL;
+    prog->head = stmt;
+
+    while (t != NULL) {
+        /* Look for statements to add to the statement list. */
+        if (t->type == EXIT || t->type == LET) {
+            stmt = parse_stmt (t);
+            add_stmt (prog->head, stmt);
+        }
+    }
+    return prog;
 }

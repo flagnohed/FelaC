@@ -8,7 +8,7 @@
 
 /* Creates a token with attributes TYPE and VALUE and
  * adds it to the linked list of tokens. Returns a pointer
- * to the new token. */
+ * to the new token or NULL if something failed. */
 token *add_token (token_t type, char *value, token **tokenhead) {
 
 	token *new = malloc (sizeof (token));
@@ -55,6 +55,8 @@ void reverse (token **head) {
 
 
 #define EXIT_STR "exit"
+#define LET_STR "let"
+#define BE_STR "be"
 
 /* Tokenizes the .fc file and fills the token list. */
 void tokenize (char contents[], token **tokenhead)
@@ -64,15 +66,14 @@ void tokenize (char contents[], token **tokenhead)
 	size_t contentsize = strlen (contents);
 	token_t tt;
 	token *t;
+	/* A token cannot have a value larger than 
+			the entire contents array. */
 	char valuebuf[contentsize];
 	/* Start the parsing loop. We wont go through the loop CONTENTSIZE times.
 		When we find some interesting character, we start the actual tokenizing. 
 		Then, we jump the size of token in terms of i. */
 	while (i < contentsize) {
-		/* A token cannot have a value larger than 
-			the entire contents array. */
 		
-		 
 		/* If C is a letter, start reading into VALUEBUF */
 		if (isalpha (contents[i])) {
 			tmpi = 0;	
@@ -86,23 +87,28 @@ void tokenize (char contents[], token **tokenhead)
 			
 			valuebuf[tmpi + 1] = '\0';	
 			i--;
-			/* Figure out what type this is. */
-			if (strcmp (EXIT_STR, valuebuf) == 0) {
-				/* This is a return keyword, so add the
-					token to the list. */
+
+			/* Figure out what type this is. 
+				Set tt to the correct token type. */
+			if (strcmp (EXIT_STR, valuebuf) == 0) 
 				tt = EXIT;
-				if ((t = add_token (tt, valuebuf, tokenhead)) == NULL) {
+				
+			else if (strcmp (LET_STR, valuebuf) == 0) 
+				tt = LET;
+
+			else if (strcmp (BE_STR, valuebuf) == 0) 
+				tt = BE;
+				
+			else 
+				/* If its not a built in keyword, it must be 
+					a variable (or identifier if you will)*/
+				tt = IDENT;
+			
+			/* Add token to the list. */
+			if ((t = add_token (tt, valuebuf, tokenhead)) == NULL) {
 					printf ("Could not add token %s. \n", valuebuf);
 					exit (EXIT_FAILURE);
 				}
-				/* We are done with this token, so jump to the beginning of
-					the for loop at the start of next token. */
-			} 
-
-			else {
-				printf ("Undefined keyword found, syntax error! \n");
-				exit (EXIT_FAILURE);
-			}
 		}
  
 		else if (isdigit (contents[i])) { 
@@ -113,13 +119,14 @@ void tokenize (char contents[], token **tokenhead)
 				valuebuf[++tmpi] = contents[i];
 			i--;
 			valuebuf[tmpi + 1] = '\0';
+
 			tt = INT_LITERAL;
 			if ((t = add_token (tt, valuebuf, tokenhead)) == NULL) {
 				printf ("Could not add token '%s'. \n", valuebuf);
 				exit (EXIT_FAILURE);
 			}
 		}
-
+		// maybe make this a switch statement?
 		else if (contents[i] == '(') {
 			tt = OPEN_PAREN;
 			if ((t = add_token (tt, "(", tokenhead)) == NULL) {

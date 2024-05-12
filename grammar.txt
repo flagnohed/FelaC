@@ -2,4 +2,4 @@
 [expr] -> INT_LITERAL
        -> ident
 [stmt] -> exit([expr]);
-          let "ident" be [expr];     // ident is variable name
+          let ident be [expr];     // ident is variable name

@@ -5,7 +5,10 @@ typedef enum {
 	INT_LITERAL,
 	SEMICOLON,
 	OPEN_PAREN,
-	CLOSE_PAREN
+	CLOSE_PAREN,
+	LET,
+	BE,
+	IDENT
 }	token_t;
 	
 typedef struct {
@@ -14,9 +17,6 @@ typedef struct {
 	void *next;		/* Pointer to the next token. */
 }	token;
 
-
-
-void tokens2asm (token **tokenhead);
 
 token *add_token (token_t type, char *value, token **tokenhead);
 
