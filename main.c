@@ -12,9 +12,6 @@
 /* List of tokens */
 token *tokenhead = NULL;
 
-void tokenize (char contents[], token **tokenhead);
-void tokens2asm (token **tokenhead);
-
 
 void print_info_and_exit (int exit_code)
 {
@@ -74,29 +71,14 @@ int main (int argc, char **argv)
 	}
 	contents[sz] = '\0';
 	
-	tokenize (contents, &tokenhead);	
-	node_prog *prog = parse_prog (tokenhead);		
-	char asscode[MAX_ASS_SIZE] = "";
-	generate_exit (prog, asscode); 
-	/* The assembly code is now in asscode. Put it in a file. */
-	FILE *assfile;
-	int r, c;
-	/* Open or create tmp.asm. W means write over any existing text, 
-		W+ means append to existing text (if any). */
-	assfile = fopen ("build/tmp.asm", "w+");
-	if (assfile == NULL) 
-		printf ("Failed to create 'build/tmp.asm'. \n");
+	printf ("Tokenizing...\n");
+	tokenize (contents, &tokenhead);
+	print_tokens(&tokenhead);
+	printf ("Parsing...\n");	
+	node_prog *prog = parse_prog (tokenhead);
+	printf ("Generating assembly...\n");		
+	generate_code (prog); 
 	
-	/* Write asscode to assfile. */
-	if ((r = fputs (asscode, assfile)) == EOF) {
-		printf ("Failed to write to file. \n");
-		exit (EXIT_FAILURE);
-	}
-
-	c = fclose (assfile);
-	assert (c == 0);
-
-
 	/* Call nasm and ld. */
 	char nasmbuf[256];
 	char ldbuf[256];
@@ -108,15 +90,12 @@ int main (int argc, char **argv)
 		exit (EXIT_FAILURE);
 	}
 		
-		
-
 	sprintf (ldbuf, "ld -o %s %s", EXEC_NAME, TMP_OBJ_NAME);
 	if ((code = system (ldbuf))) {
 		printf ("ld error: system() returned %d. \n", code);
 		exit (EXIT_FAILURE);
 	}
 		
-
 	printf ("Compilation done. Main executable: fcprogram. \n");
 	return EXIT_SUCCESS;
 }

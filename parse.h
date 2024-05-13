@@ -13,52 +13,50 @@ We can do this because the namespace of structs and the namespace
 of types are separate in C." */
 typedef struct node_expr node_expr; 
 typedef struct node_stmt node_stmt;
-
+typedef struct node_prog node_prog;
 /* C does not have tagged unions, so this is the closest we get to it. */
-
-typedef struct {
+/* Name conflict between tokenizer and parser, so we insert _ before each */
+struct node_expr {
     enum {
-        INT_LITERAL,
-        IDENT
-}   expr_t;
+        _INT_LITERAL,
+        _IDENT
+    }   expr_t;
 
     union {
-        struct INT_LITERAL { int val; } INT_LITERAL;
-        struct IDENT { char *name; node_expr *val; } IDENT;
+        struct _INT_LITERAL { int val; } _INT_LITERAL;
+        struct _IDENT { char *name; node_expr *val; } _IDENT;
     }   data;
 
-}   node_expr;
+};
 
 
 
-typedef struct {
+struct node_stmt {
     enum {
-        EXIT,
-        LET
-}   stmt_t;
+        _EXIT,
+        _LET
+    }   stmt_t;
     union {
-        struct EXIT { node_expr *expr; } EXIT;
-        struct LET { node_expr *ident; node_expr *expr; } LET;
+        struct _EXIT { node_expr *expr; } _EXIT;    
+        struct _LET { node_expr *ident; } _LET;     /* Variable declaration. */
     }   data;
-    node_stmt *next;
-}   node_stmt;
+    struct node_stmt *next;
+};
 
 
-node_stmt *add_stmt (node_stmt **head, node_stmt *new);
+struct node_stmt *add_stmt (struct node_stmt **head, struct node_stmt *new);
 
 
-typedef struct {
+struct node_prog {
     /* A program is a list of statements. */
 
     node_stmt *head;  // pointer to the first statement.
 
-}   node_prog;
+};
 
 
-
-
-
-
+node_expr *expr_new (node_expr expr);
+node_stmt *stmt_new (node_stmt stmt);
 
 #define EXPR_NEW(type, ...) \
     expr_new((node_expr){type, {.type=(struct type){__VA_ARGS__}}})

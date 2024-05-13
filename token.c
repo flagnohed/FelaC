@@ -28,6 +28,7 @@ token *add_token (token_t type, char *value, token **tokenhead) {
 /* Print all tokens. */
 void print_tokens (token **tokenhead) {
 	token *cur = *tokenhead;
+	if (cur == NULL) return;
 	while (cur->next != NULL) {
 		printf ("'%s' ", cur->value);
 		cur = cur->next;
@@ -62,7 +63,7 @@ void reverse (token **head) {
 void tokenize (char contents[], token **tokenhead)
 {	
 	/* Index relative to current token being parsed. */
-	size_t tmpi, i;
+	size_t tmpi, i = 0;
 	size_t contentsize = strlen (contents);
 	token_t tt;
 	token *t;
@@ -73,7 +74,6 @@ void tokenize (char contents[], token **tokenhead)
 		When we find some interesting character, we start the actual tokenizing. 
 		Then, we jump the size of token in terms of i. */
 	while (i < contentsize) {
-		
 		/* If C is a letter, start reading into VALUEBUF */
 		if (isalpha (contents[i])) {
 			tmpi = 0;	
@@ -86,8 +86,7 @@ void tokenize (char contents[], token **tokenhead)
 				valuebuf[++tmpi] = contents[i];
 			
 			valuebuf[tmpi + 1] = '\0';	
-			i--;
-
+			
 			/* Figure out what type this is. 
 				Set tt to the correct token type. */
 			if (strcmp (EXIT_STR, valuebuf) == 0) 
@@ -109,15 +108,19 @@ void tokenize (char contents[], token **tokenhead)
 					printf ("Could not add token %s. \n", valuebuf);
 					exit (EXIT_FAILURE);
 				}
+
+			continue;
+			
+		
 		}
- 
+		
 		else if (isdigit (contents[i])) { 
 			tmpi = 0;
 			valuebuf[tmpi] = contents[i];
 			/* Keep reading digits. */
 			while (isdigit (contents[++i]))
 				valuebuf[++tmpi] = contents[i];
-			i--;
+			
 			valuebuf[tmpi + 1] = '\0';
 
 			tt = INT_LITERAL;
@@ -125,34 +128,44 @@ void tokenize (char contents[], token **tokenhead)
 				printf ("Could not add token '%s'. \n", valuebuf);
 				exit (EXIT_FAILURE);
 			}
+			continue;
 		}
 		// maybe make this a switch statement?
 		else if (contents[i] == '(') {
 			tt = OPEN_PAREN;
+			i++;
 			if ((t = add_token (tt, "(", tokenhead)) == NULL) {
 				printf ("Could not add token '('. \n");
 				exit (EXIT_FAILURE);
 			}
+			continue;
 		}
 
 		else if (contents[i] == ')') {
 			tt = CLOSE_PAREN;
+			i++;
 			if ((t = add_token (tt, ")", tokenhead)) == NULL) {
 				printf ("Could not add token ')'. \n");
 				exit (EXIT_FAILURE);
 			}
+			continue;
 		}
 
 		else if (contents[i] == ';') {
 			tt = SEMICOLON;
+			i++;
 			if ((t = add_token (tt, ";", tokenhead)) == NULL) {
 				printf ("Could not add token ';'. \n");
 				exit (EXIT_FAILURE);
 			}
+			continue;
 		}
 		
-		else if (contents[i] == ' ') 
+		else if (contents[i] == ' ' || contents[i] == '\n') {
+			i++;
 			continue;
+		}
+			
 
 		
 
