@@ -14,8 +14,8 @@ node_expr *parse_expr (token *t) {
     if (t->type == INT_LITERAL)
         expr = EXPR_NEW(_INT_LITERAL, atoi(t->value));
     else if (t->type == IDENT) {
-
-        // todo
+        /* Check if we know this variable and has its value. */
+        expr = EXPR_NEW (_IDENT, t->value);
     }
 
     else {
@@ -69,7 +69,7 @@ node_stmt *parse_stmt (token *t) {
 
         t = t->next;
         if ((nexpr = parse_expr (t)) == NULL) {
-            printf ("Expected an expression. \n");
+            printf ("Expected an expression (in exit): t->value = %s. \n", t->value);
             exit (EXIT_FAILURE);
         }
 
@@ -96,7 +96,7 @@ node_stmt *parse_stmt (token *t) {
             exit (EXIT_FAILURE);
         }
         /* Save the name of the identifier. */
-        
+        char *name = t->value;
         
         t = t->next;
         if (t->type != BE) {
@@ -106,7 +106,7 @@ node_stmt *parse_stmt (token *t) {
 
         t = t->next;
         if ((nexpr = parse_expr (t)) == NULL) {
-            printf ("Expected an expression. \n");
+            printf ("Expected an expression (in let): t->value = %s. \n", t->value);
             exit (EXIT_FAILURE);
         }
         t = t->next;
@@ -116,7 +116,7 @@ node_stmt *parse_stmt (token *t) {
         }
         t = t->next;
 
-        stmt = STMT_NEW(_LET, nexpr);
+        stmt = STMT_NEW(_LET, name, nexpr);
     }
 
     else {
@@ -130,28 +130,31 @@ node_stmt *parse_stmt (token *t) {
 /* Adds node_stmt NEW to stmt list pointed to by HEAD. 
 When creating a statement with STMT_NEW, the next pointer is NULL.
 So we need to do it here to have the correct order in node_prog. */
-node_stmt *add_stmt (node_stmt **head, node_stmt *new) {
-    new->next = *head;
-    *head = new;
-    return new;
+void add_stmt (node_stmt **head, node_stmt *_new) {
+    _new->next = *head;
+    *head = _new;
 }
 
 
-node_prog *parse_prog (token *t) {
+node_prog *parse_prog (token **tokenhead) {
     node_prog *prog = malloc (sizeof (node_prog));
-    node_stmt *stmt;
-    reverse (&t);
-
+    node_stmt *stmt = NULL;
+    token *t = *tokenhead;
     while (t != NULL) {
         /* Look for statements to add to the statement list. */
         if (t->type == EXIT || t->type == LET) {
-            printf ("adding exit statement\n");
-            stmt = parse_stmt (t);
-            add_stmt (&prog->head, stmt);
+            add_stmt (&stmt, parse_stmt (t));
+            if (stmt == NULL) {
+                printf ("Failed to add statement to list. \n");
+                exit (EXIT_FAILURE);
+            }
+
         }
 
         t = t->next;
     }
+
+    prog->head = stmt;
 
 
     return prog;

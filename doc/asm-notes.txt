@@ -5,3 +5,6 @@ To compile and run asm file:
 To see error_code of last command: 
 
 	echo $?
+
+%rax function return value
+dont use %rbx, %rbp, %r12-15

@@ -73,9 +73,13 @@ int main (int argc, char **argv)
 	
 	printf ("Tokenizing...\n");
 	tokenize (contents, &tokenhead);
+	reverse (&tokenhead);
 	print_tokens(&tokenhead);
+	// reverse (&tokenhead);
 	printf ("Parsing...\n");	
-	node_prog *prog = parse_prog (tokenhead);
+	node_prog *prog;
+	prog = parse_prog (&tokenhead);
+
 	printf ("Generating assembly...\n");		
 	generate_code (prog); 
 	

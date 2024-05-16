@@ -28,14 +28,15 @@ token *add_token (token_t type, char *value, token **tokenhead) {
 /* Print all tokens. */
 void print_tokens (token **tokenhead) {
 	token *cur = *tokenhead;
+	// reverse (&cur);
 	if (cur == NULL) return;
 	while (cur->next != NULL) {
-		printf ("'%s' ", cur->value);
+		printf ("'%s %d' ->", cur->value, cur->type);
 		cur = cur->next;
 	}
-	printf ("'%s' \n", cur->value);
+	printf ("'%s %d' \n", cur->value, cur->type);
 }
-
+ 
 
 
 /* Reverses to the correct order. When inserting, the first token added

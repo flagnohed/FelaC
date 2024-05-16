@@ -1,9 +1,9 @@
-
 global _start
-_start:
-	mov rax, 60   ; exit syscall number
-	mov rdi, 69   ; put error_code in rdi
-	syscall
-	 
+; fibonacci
+_start :
+	call fib
 
-
+fib:
+	mov 0, r8
+	mov 1, r9
+	

@@ -24,7 +24,7 @@ struct node_expr {
 
     union {
         struct _INT_LITERAL { int val; } _INT_LITERAL;
-        struct _IDENT { char *name; node_expr *val; } _IDENT;
+        struct _IDENT { char *name; } _IDENT;
     }   data;
 
 };
@@ -38,13 +38,13 @@ struct node_stmt {
     }   stmt_t;
     union {
         struct _EXIT { node_expr *expr; } _EXIT;    
-        struct _LET { node_expr *ident; } _LET;     /* Variable declaration. */
+        struct _LET { char *name; node_expr *expr; } _LET;     /* Variable declaration. */
     }   data;
     struct node_stmt *next;
 };
 
 
-struct node_stmt *add_stmt (struct node_stmt **head, struct node_stmt *new);
+void add_stmt (struct node_stmt **head, struct node_stmt *_new);
 
 
 struct node_prog {
@@ -69,7 +69,7 @@ node_stmt *stmt_new (node_stmt stmt);
 parsing say three tokens, skipping them and after for example
 parse_expr is done, that expression is no linger in the token list.
 */
-node_prog *parse_prog (token *t);
+node_prog *parse_prog (token **tokenhead);
 
 node_stmt *parse_stmt (token *t);
 
