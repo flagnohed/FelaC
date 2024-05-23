@@ -19,12 +19,16 @@ typedef struct node_prog node_prog;
 struct node_expr {
     enum {
         _INT_LITERAL,
-        _IDENT
+        _IDENT,
+        _ADD,
+        _MULTI
     }   expr_t;
 
     union {
         struct _INT_LITERAL { int val; } _INT_LITERAL;
         struct _IDENT { char *name; } _IDENT;
+        struct _ADD {node_expr *lhs; node_expr *rhs};
+        struct _MULT {node_expr *lhs; node_expr *rhs};
     }   data;
 
 };

@@ -4,11 +4,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
-static size_t hash_entries = 0;
+// static size_t hash_entries = 0;
 
 
-int eval_expr (node_expr *expr, htable *ht) {
+int eval_expr (node_expr *expr, hashmap *map) {
     /* Base case. If its just a number, return it. */
     if (expr->expr_t == _INT_LITERAL) {
         struct _INT_LITERAL intlit = expr->data._INT_LITERAL;
@@ -17,8 +18,8 @@ int eval_expr (node_expr *expr, htable *ht) {
     /* Get the expression of variable, evaluate it. */
     else if (expr->expr_t == _IDENT) {
         struct _IDENT id = expr->data._IDENT;
-        value_s *val = hash_lookup (ht, id.name); 
-        return val->data;
+        return get_value (map, id.name); 
+        
     }
     else {
         printf ("Could not evaluate expression. \n");
@@ -27,30 +28,30 @@ int eval_expr (node_expr *expr, htable *ht) {
 }
 
 
-void gen_exit(FILE *stream, node_expr *expr, htable *ht) {
+void gen_exit(FILE *stream, node_expr *expr, hashmap *map) {
     /* 60 is the syscall number for exit. */
     fprintf (stream, "\tmov rax, 60\n"); fflush (stream);
     /* Put the evaluated expression as an int into rdi (error code). */
-    fprintf (stream, "\tmov rdi, %d\n", eval_expr (expr, ht)); fflush (stream);
+    fprintf (stream, "\tmov rdi, %d\n", eval_expr (expr, map)); fflush (stream);
     fprintf (stream, "\tsyscall\n"); fflush (stream);
 }
 
 /* If variable does not exist yet, add it to HT. We dont need to
     create assembly code for this, as we keep track of variables in
     the hash table. */
-void add_ident (FILE *stream, char *name, node_expr *expr, htable *ht) {
-    /* Make sure that we havent seen this variable before. */
-    if (hash_lookup (ht, name) != NULL) {
-        printf ("Identifier %s has already been declared. \n", name);
-        exit (EXIT_FAILURE);
-    }
-    value_s *val = calloc (1, sizeof (value_s));
-    val->data = eval_expr (expr, ht);
-    hash_insert (ht, name, val);
-}
+// void add_ident (FILE *stream, char *name, node_expr *expr, hashmap *map) {
+//     /* Make sure that we havent seen this variable before. */
+//     if (hash_lookup (map, name) != NULL) {
+//         printf ("Identifier %s has already been declared. \n", name);
+//         exit (EXIT_FAILURE);
+//     }
+//     value_s *val = calloc (1, sizeof (value_s));
+//     val->data = eval_expr (expr, ht);
+//     hash_insert (ht, name, val);
+// }
 
-void gen_intlit (FILE *stream, node_expr *expr, htable *ht) {
-    fprintf (stream, "\tmov rax, %d\n", eval_expr (expr, ht));
+void gen_intlit (FILE *stream, node_expr *expr, hashmap *map) {
+    fprintf (stream, "\tmov rax, %d\n", eval_expr (expr, map));
     fflush (stream);
     push (stream, "rax");
 }
@@ -90,7 +91,7 @@ void generate_code (node_prog *prog) {
     size_t hsz = 10;
     int r, c;
 
-    htable *ht = hash_new (hsz);
+    hashmap *map = create_hashmap (hsz);
     FILE *stream, *assfile;
     char *asscode;
     stream = open_memstream (&asscode, &sz);
@@ -104,13 +105,11 @@ void generate_code (node_prog *prog) {
             case _EXIT:
             
                 struct _EXIT e = head->data._EXIT;
-                printf ("exit\n");
-                gen_exit (stream, e.expr, ht);
+                gen_exit (stream, e.expr, map);
                 break;
             case _LET:
                 struct _LET l = head->data._LET;
-                // struct _IDENT i = l.ident->data._IDENT;  
-                add_ident (stream, l.name, l.expr, ht);
+                insert (map, l.name, eval_expr (l.expr, map));
                 break;
             default:
                 printf ("Unrecognized statement type. \n");
@@ -145,64 +144,55 @@ void generate_code (node_prog *prog) {
 
 #define HSIZE_FACTOR 137
 
-htable *hash_new (size_t size) {
+hashmap *create_hashmap (size_t size) {
+    hashmap *map = malloc (sizeof (hashmap));
+    map->size = size;
+    map->vars = malloc (size * sizeof (variable *));
 
-    /* The hash table should be an array with length about 1.3 times 
-        the maximum number of keys that will actually be in the table, 
-        and. Size of hash table array should be a prime number. */
-    size_t hsize = HSIZE_FACTOR * size;
-    htable *ht = calloc (1, sizeof (htable));
-    ht->keys = calloc (hsize, sizeof (char *));
-    ht->values = calloc (hsize, sizeof (value_s));
-    ht->size = hsize;
-    return ht;
+    for (size_t i = 0; i < size; i++) 
+        map->vars[i] = NULL;
+
+    return map;
 }
 
+size_t hash_djb2 (const char *str, size_t size) {
+    size_t hash = 5381;
+    int c;
 
-void hash_del (htable *ht) {
-    free (ht->keys);
-    ht->keys = NULL;
-    free (ht->values);
-    ht->values = NULL;
-}
-
-
-size_t hash_index(htable *ht, char *key) {
-    size_t i = (size_t) key % ht->size;
-    printf ("i = %zu\n", i);
-    /* If we find someone at "our" spot, and its not us, 
-        try the next spot until we find a vacant spot. */
-    while (ht->keys[i] && ht->keys[i] != key)
-        i = (i + 1) % ht->size;
-
-    return i;
-}
-
-
-void hash_insert (htable *ht, void *key, value_s *value) {
-    size_t i = hash_index (ht, key);
-
-    if (ht->values[i] != NULL) {
-        printf ("Encountered a value at index %zu (should be NULL). \n", i);
-        exit (EXIT_FAILURE);
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
     }
 
-    ht->keys[i] = key;
-    ht->values[i] = value;
-    hash_entries++;
-
-    printf("[DEBUG]: added ident %s with value %d. \n", ht->keys[i], *((int *)ht->values[i]));
+    return hash % size;  // to give us an index in the database
 }
 
-/* Returns a pointer to the corresponding VALUE from KEY if it exists, 
-    else NULL. */
-value_s *hash_lookup (htable *ht, char *key) {
-
-    if (hash_entries == 0) return NULL;
-
-    size_t i = hash_index (ht, key);
-    
-    return ht->values[i];
+void insert (hashmap *map, char *key, int value) {
+    size_t i = hash_djb2 (key, map->size);
+    variable *v = malloc (sizeof (variable));
+    v->name = key;
+    v->value = value;
+    v->next = map->vars[i];
+    map->vars[i] = v;
+    printf ("Successfully registered %s as %d, at index %zu. \n", key, value, i);
 }
+
+int get_value (hashmap *map, char *key) {
+    size_t i = hash_djb2 (key, map->size);
+    printf ("i == %zu \n", i);
+    variable *v = map->vars[i];
+    while (v != NULL) {
+        if (strcmp (key, v->name) == 0)
+            return v->value;
+        v = v->next;
+    }
+
+    /* If we come here, we didnt find the variable in the hashmap, 
+    so we throw error. We do not want to return something like -1 since a variable 
+    should be able to be all ints (atm). */
+    printf ("Tried accessing an undefined variable. \n");
+    exit(EXIT_FAILURE);
+}
+
+
 
 
